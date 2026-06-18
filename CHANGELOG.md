@@ -8,10 +8,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Planned — v0.3.0
-- Countdown timer panel with presets: 10 s (test), 5 / 10 / 15 / 20 / 25 / 30 min
-- Uses HA native `timer` helper — continues even when browser is closed
-- Live countdown display reading `timer.finishes_at` attribute
+### Planned — v1.0.0
+- Pool fill mode with volume-based safety cutoff (auto-close at configurable litre limit)
+
+---
+
+## [0.3.0] — 2026-06-18
+
+### Added
+- **Countdown timer panel** — always-visible timer section between the stats bar and pool section
+- **Preset buttons**: 10 s (test), 5 / 10 / 15 / 20 / 25 / 30 min; one tap starts the timer and opens the valve
+- **Live countdown display** — reads `timer.finishes_at` attribute, updated every second client-side; matches reality even after a page reload or browser restart
+- **Cancel & close valve button** — appears while timer is active; cancels the HA timer and turns the valve off
+- **HA timer helper** — `timer.tap_lhs_lower_lawn_green_timer` (`restore: true` so it survives HA restarts)
+- **HA automation** — `automation.close_tap_when_timer_finishes_lhs_lower_lawn_green` triggers on `timer.finished` event and calls `switch.turn_off`
+
+### Design decisions
+- Timer state (idle vs. active) is resolved at Jinja2 render time using `states('timer.*')` and `state_attr('timer.*','finishes_at')` — no extra helper entity needed
+- `finish_ts` (Unix timestamp) is passed from Jinja2 to JS so the client countdown stays synchronised with the server timer without polling HA
+- Starting a timer preset also turns the valve on — one tap is all the user needs
+- Cancel button explicitly turns the valve off rather than relying solely on the automation, so cancelling mid-session reliably closes water flow
+- `window['zwvStartTimer_'+prefix]` and `window['zwvCancelTimer_'+prefix]` follow the same IIFE-and-global-function pattern as the pool mode toggle to avoid multi-card collisions
 
 ---
 
