@@ -158,19 +158,19 @@ content: >-
       <div class="zwv-tmr-hdr">⏱ Timer</div>
       <div id="zwv-tmr-idle-tap_lhs_lower_lawn_green" {{ 'style="display:none"' if timer_active else '' }}>
         <div class="zwv-tmr-presets">
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:00:10')">10s</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:05:00')">5m</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:10:00')">10m</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:15:00')">15m</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:20:00')">20m</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:25:00')">25m</span>
-          <span class="zwv-tmr-btn" onclick="zwvStartTimer_tap_lhs_lower_lawn_green('00:30:00')">30m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:00:10'});}})()">10s</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:05:00'});}})()">5m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:10:00'});}})()">10m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:15:00'});}})()">15m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:20:00'});}})()">20m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:25:00'});}})()">25m</span>
+          <span class="zwv-tmr-btn" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:'00:30:00'});}})()">30m</span>
         </div>
       </div>
       <div id="zwv-tmr-active-tap_lhs_lower_lawn_green" {{ '' if timer_active else 'style="display:none"' }}>
         <div class="zwv-tmr-cd-wrap">
           <div class="zwv-tmr-cd" id="zwv-cd-tap_lhs_lower_lawn_green">{{ remaining_fmt }}</div>
-          <span class="zwv-tmr-cancel" onclick="zwvCancelTimer_tap_lhs_lower_lawn_green()">✕ Cancel &amp; close valve</span>
+          <span class="zwv-tmr-cancel" onclick="(function(){var h=document.querySelector('home-assistant');if(h&&h.hass){h.hass.callService('timer','cancel',{entity_id:'timer.tap_lhs_lower_lawn_green_timer'});h.hass.callService('switch','turn_off',{entity_id:'switch.tap_lhs_lower_lawn_green'});}})()">✕ Cancel &amp; close valve</span>
         </div>
       </div>
     </div>
@@ -235,18 +235,6 @@ content: >-
       var r=getRemaining();
       if(cd&&r!==null)cd.textContent=r;
     }
-    window['zwvStartTimer_'+prefix]=function(duration){
-      var h=document.querySelector('home-assistant');
-      if(!h||!h.hass)return;
-      h.hass.callService('switch','turn_on',{entity_id:'switch.tap_lhs_lower_lawn_green'});
-      h.hass.callService('timer','start',{entity_id:'timer.tap_lhs_lower_lawn_green_timer',duration:duration});
-    };
-    window['zwvCancelTimer_'+prefix]=function(){
-      var h=document.querySelector('home-assistant');
-      if(!h||!h.hass)return;
-      h.hass.callService('timer','cancel',{entity_id:'timer.tap_lhs_lower_lawn_green_timer'});
-      h.hass.callService('switch','turn_off',{entity_id:'switch.tap_lhs_lower_lawn_green'});
-    };
     applyPool();
     setInterval(updateElapsed,30000);
     if(timerActive)setInterval(updateCountdown,1000);
