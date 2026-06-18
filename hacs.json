@@ -1,0 +1,7 @@
+{
+  "name": "Zigbee Smart Water Valve Card",
+  "description": "Dashboard card for Zigbee smart water valves (Zigbee2MQTT) — valve control, flow rate, consumption tracking, and countdown timer.",
+  "render_readme": true,
+  "content_in_root": false,
+  "filename": "releases/v0.2.0/card.yaml"
+}
