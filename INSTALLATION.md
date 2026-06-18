@@ -1,6 +1,6 @@
 # Installation Guide
 
-**Current version:** v0.3.0  
+**Current version:** v1.0.0  
 **Repository:** https://github.com/rhamblen/Zigbee-smart-water-valve
 
 ---
@@ -57,7 +57,7 @@ Your prefix is everything after `switch.` — e.g. `tap_lhs_lower_lawn_green`.
 
 #### Step 1 — Create HA helpers
 
-You need **five helpers per valve**. Create them at **Settings → Devices & Services → Helpers → Create helper**.
+You need **eight helpers** (five per valve, plus three shared pool fill helpers). Create them at **Settings → Devices & Services → Helpers → Create helper**.
 
 > **Important:** Create them in order — each one feeds into the next.
 
@@ -138,6 +138,55 @@ This creates `timer.tap_lhs_lower_lawn_green_timer`. The `Restore` setting ensur
 
 ---
 
+##### 1f. Pool fill target (shared — create once, not per valve)
+
+Helper type: **Number**
+
+| Field | Value |
+|-------|-------|
+| Name | `Pool fill target` |
+| Minimum | `0` |
+| Maximum | `20000` |
+| Step size | `50` |
+| Unit of measurement | `L` |
+| Display mode | Box |
+| Icon | `mdi:pool` |
+
+This creates `input_number.pool_fill_target`. Set your target volume here before starting a pool fill.
+
+---
+
+##### 1g. Pool fill start volume (shared — create once, not per valve)
+
+Helper type: **Number**
+
+| Field | Value |
+|-------|-------|
+| Name | `Pool fill start volume` |
+| Minimum | `0` |
+| Maximum | `1000000` |
+| Step size | `0.001` |
+| Unit of measurement | `L` |
+| Display mode | Box |
+| Icon | `mdi:water-sync` |
+
+This creates `input_number.pool_fill_start_volume`. Updated automatically when pool mode is activated — do not edit manually.
+
+---
+
+##### 1h. Pool fill active toggle (per valve)
+
+Helper type: **Toggle**
+
+| Field | Value |
+|-------|-------|
+| Name | `Pool Fill Active [valve name]` |
+| Icon | `mdi:pool` |
+
+For the LHS Lower Lawn Green valve: `Pool Fill Active LHS Lower Lawn Green` → creates `input_boolean.pool_fill_active_lhs_lower_lawn_green`.
+
+---
+
 #### Step 2 — Create the close-valve automation
 
 Go to **Settings → Automations → Create automation → Start with an empty automation**.
@@ -165,9 +214,38 @@ mode: single
 
 ---
 
+#### Step 2b — Create the pool fill cutoff automation
+
+Go to **Settings → Automations → Create automation → Start with an empty automation**.
+
+Or paste this YAML into the automation editor (three-dot menu → Edit as YAML):
+
+```yaml
+alias: Pool fill cutoff (LHS Lower Lawn Green)
+description: Closes valve when pool fill target volume is reached
+trigger:
+  - platform: template
+    value_template: >
+      {% set session = [0, states('sensor.tap_lhs_lower_lawn_green_volume')|float(0) -
+                       states('input_number.pool_fill_start_volume')|float(0)]|max %}
+      {% set target = states('input_number.pool_fill_target')|float(0) %}
+      {{ target > 0 and session >= target }}
+condition:
+  - condition: state
+    entity_id: switch.tap_lhs_lower_lawn_green
+    state: 'on'
+action:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.tap_lhs_lower_lawn_green
+mode: single
+```
+
+---
+
 #### Step 3 — Download and adapt the card YAML
 
-1. Download [`releases/v0.3.0/card.yaml`](releases/v0.3.0/card.yaml) from this repository
+1. Download [`releases/v1.0.0/card.yaml`](releases/v1.0.0/card.yaml) from this repository
 2. Open it in a text editor
 3. Find-and-replace **all** occurrences of `tap_lhs_lower_lawn_green` with your actual prefix
 
@@ -194,7 +272,7 @@ The card should show:
 - **OPEN / CLOSE buttons** that immediately toggle the valve
 - **Stats bar** — Flow | Today | This month (Today and This month will show `—` until the helpers produce their first reading)
 - **⏱ Timer panel** — preset buttons that open the valve and start a countdown; auto-closes valve when time expires
-- **🏊 Pool mode button** in the top-right header (hidden section; tap to toggle)
+- **🏊 Pool mode button** in the top-right header — tap to activate pool fill mode; shows Target / progress bar / Filled / Remaining / elapsed time
 
 ---
 
@@ -213,12 +291,12 @@ The card should show:
 
 ## Adding more valves
 
-Repeat Steps 1–4 for each additional valve, substituting that valve's entity prefix throughout. Each valve needs its own set of 5 helpers, its own automation, and its own card instance.
+Repeat Steps 1–4 for each additional valve, substituting that valve's entity prefix throughout. Each valve needs its own set of 5 sensor/timer helpers (steps 1a–1e), its own `input_boolean.pool_fill_active_{prefix}` (step 1h), its own two automations (steps 2 and 2b), and its own card instance. The two `input_number` pool fill helpers (steps 1f–1g) are shared — create them once only.
 
 ---
 
 ## Updating to a newer version
 
-1. Download the new `card.yaml` from the relevant `releases/vX.Y.Z/` folder
+1. Download `releases/v1.0.0/card.yaml` (or whichever new version)
 2. Apply your entity prefix find-replace
 3. Open your dashboard editor → find the valve card → Edit → replace the content → Save

@@ -8,8 +8,40 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Planned — v1.0.0
-- Pool fill mode with volume-based safety cutoff (auto-close at configurable litre limit)
+Nothing planned yet.
+
+---
+
+## [1.0.0] — 2026-06-18
+
+### Added
+- **Pool fill mode** — 🏊 button in card header reveals a pool fill tracking section
+- **Volume-based safety cutoff** — HA automation closes the valve automatically when session volume reaches the configurable target
+- **Session volume tracking** — Jinja2 computes filled/remaining litres from Riemann sum integration delta at each re-render; no JS required
+- **Progress bar** — cyan gradient fill bar shows percentage of target reached; appears once a target is set
+- **Tap-to-set target** — tapping the Target row opens the `input_number.pool_fill_target` more-info panel for easy editing
+- **Pool mode state in HA** — moved from `localStorage` to `input_boolean.pool_fill_active_{prefix}`; pool section now shows/hides via Jinja2 and survives re-renders reliably on all devices
+- **Start volume recorded automatically** — toggling pool mode on calls `input_number.set_value` for `pool_fill_start_volume` via a self-contained IIFE; session tracking resets each time pool mode is activated
+
+### Changed
+- **Pool toggle button** — onclick converted to self-contained IIFE (same pattern as timer buttons); no longer relies on `window['zwvTogglePool_'+prefix]` window function
+- **Pool section content** — replaced elapsed-time-only display with Target / progress bar / Filled this session / Remaining / Valve open for rows
+- Removed `zwv-pool-note` CSS class (no longer needed)
+- Added `zwv-pool-clickable`, `zwv-pool-progress`, `zwv-pool-bar` CSS classes
+
+### New HA helpers (per valve)
+- `input_number.pool_fill_target` — target fill volume in L (0–20 000 L, step 50)
+- `input_number.pool_fill_start_volume` — records accumulator reading at pool mode activation (set automatically)
+- `input_boolean.pool_fill_active_{prefix}` — pool mode on/off state (replaces localStorage)
+
+### New HA automation
+- `automation.pool_fill_cutoff_{prefix}` — template trigger fires when session volume ≥ target; closes the valve
+
+### Design decisions
+- Pool mode state stored in HA (`input_boolean`) rather than `localStorage` so the pool section persists across re-renders, browsers, and devices
+- Session volume computed as Jinja2 delta (`volume_L - pool_start`) — recalculated on every re-render; no JS polling needed
+- `fill_pct` clamped to `[0, 100]` in Jinja2 using `|min`/`|max` filter chaining
+- Pool toggle IIFE detects current state from Jinja2-rendered boolean (`!{{ 'true' if pool_active else 'false' }}`) to decide whether to also set start volume, avoiding a round-trip read of the input_boolean
 
 ---
 

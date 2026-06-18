@@ -12,8 +12,8 @@ A styled Home Assistant Lovelace dashboard card for **Zigbee smart water valves*
 - **Valve state** — OPEN (cyan) / CLOSED (red) / UNAVAILABLE (dim)
 - **OPEN / CLOSE buttons** — call the HA switch service immediately; no popup needed
 - **Stats bar** — Flow | Today | This month; tap any cell for HA history popup
-- **Countdown timer** — preset buttons (10 s, 5–30 min) open the valve and start a native HA timer; auto-closes the valve when time expires; live countdown display
-- **Pool mode** (hidden) — shows elapsed open time and today's water usage; toggle via 🏊 button in card header
+- **Countdown timer** — preset buttons (5–30 min) open the valve and start a native HA timer; auto-closes the valve when time expires; live countdown display
+- **Pool fill mode** — volume-based safety cutoff; set a litre target, tap 🏊 to start tracking, progress bar fills as water flows, valve closes automatically when target is reached
 - **Warning indicator** — lights amber when the device is unavailable
 - **HA theme aware** — uses CSS variables (`--primary-text-color`, `--secondary-text-color`, etc.)
 - **Multi-valve safe** — one card per valve; find-replace the entity prefix to configure each instance
@@ -28,7 +28,7 @@ A styled Home Assistant Lovelace dashboard card for **Zigbee smart water valves*
 | v0.1.1 | ✅ | Pool mode toggle (localStorage), elapsed time display |
 | v0.2.0 | ✅ | Daily & monthly water consumption (Riemann sum + utility meter helpers) |
 | v0.3.0 | ✅ | Countdown timer with auto-close valve automation |
-| v1.0.0 | Planned | Pool fill mode — volume-based safety cutoff |
+| v1.0.0 | ✅ | Pool fill mode — volume-based safety cutoff |
 
 ---
 
@@ -56,7 +56,7 @@ Claude will create all required helpers, the automation, and deploy the card.
 
 1. Install `custom:html-template-card` via HACS
 2. Create the required HA helpers (see [INSTALLATION.md](INSTALLATION.md))
-3. Download [`releases/v0.3.0/card.yaml`](releases/v0.3.0/card.yaml)
+3. Download [`releases/v1.0.0/card.yaml`](releases/v1.0.0/card.yaml)
 4. Find-and-replace `tap_lhs_lower_lawn_green` with your entity prefix
 5. Add as a Manual card on your dashboard
 
@@ -73,6 +73,9 @@ Claude will create all required helpers, the automation, and deploy the card.
 | `sensor.{prefix}_daily` | Utility meter — daily reset (L) |
 | `sensor.{prefix}_monthly` | Utility meter — monthly reset (L) |
 | `timer.{prefix}_timer` | HA timer helper for countdown |
+| `input_number.pool_fill_target` | Target fill volume in L (shared across valves) |
+| `input_number.pool_fill_start_volume` | Session start accumulator — set automatically on pool mode activation |
+| `input_boolean.pool_fill_active_{prefix}` | Pool mode on/off state |
 
 ---
 

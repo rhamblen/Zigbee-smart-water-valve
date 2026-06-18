@@ -1,30 +1,32 @@
 # Zigbee Smart Water Valve — Dashboard Card
-# v0.3.0
+# v1.0.0
 # Repository: https://github.com/rhamblen/Zigbee-smart-water-valve
 # Requires: custom:html-template-card (HACS)
 #
 # ENTITY PREFIX
 # Find-and-replace ALL occurrences of "tap_lhs_lower_lawn_green" with your actual prefix.
-# Also update the helper entity IDs for volume/daily/monthly sensors.
 #
 # HELPERS REQUIRED (Phase 2 — consumption):
-#   sensor.tap_{prefix}_flow_l_h         — template sensor (m³/h → L/h)
-#   sensor.tap_{prefix}_volume           — integration (Riemann sum, L)
-#   sensor.tap_{prefix}_daily            — utility meter daily (L)
-#   sensor.tap_{prefix}_monthly          — utility meter monthly (L)
+#   sensor.{prefix}_flow_l_h              — template sensor (m³/h → L/h)
+#   sensor.{prefix}_volume                — integration (Riemann sum, L)
+#   sensor.{prefix}_daily                 — utility meter daily (L)
+#   sensor.{prefix}_monthly               — utility meter monthly (L)
 #
 # HELPERS REQUIRED (Phase 3 — timer):
-#   timer.tap_{prefix}_timer             — HA timer helper (restore: true)
+#   timer.{prefix}_timer                  — HA timer helper (restore: true)
 #   automation: closes valve on timer.finished event
+#
+# HELPERS REQUIRED (Phase 4 — pool fill):
+#   input_number.pool_fill_target         — target pool fill volume in L
+#   input_number.pool_fill_start_volume   — session start accumulator (set automatically)
+#   input_boolean.pool_fill_active_{prefix} — pool mode toggle state
+#   automation: closes valve when session_vol >= pool_fill_target
 #
 # For this card instance (LHS Lower Lawn Green):
 #   timer.tap_lhs_lower_lawn_green_timer
 #   sensor.tap_lhs_lower_lawn_green_daily
 #   sensor.tap_lhs_lower_lawn_green_monthly
-#
-# Entities used:
-#   switch.{prefix}        — valve open/close control
-#   sensor.{prefix}_flow   — volume flow rate (m³/h, displayed as L/min)
+#   input_boolean.pool_fill_active_lhs_lower_lawn_green
 
 type: custom:html-template-card
 ignore_line_breaks: true
@@ -58,6 +60,13 @@ content: >-
   {% set remaining_m = remaining_secs // 60 %}
   {% set remaining_s = remaining_secs % 60 %}
   {% set remaining_fmt = remaining_m|string + ':' + ('0' if remaining_s < 10 else '') + remaining_s|string %}
+  {% set volume_L     = states('sensor.tap_lhs_lower_lawn_green_volume')|float(0) %}
+  {% set pool_target  = states('input_number.pool_fill_target')|float(0) %}
+  {% set pool_start   = states('input_number.pool_fill_start_volume')|float(0) %}
+  {% set pool_active  = is_state('input_boolean.pool_fill_active_lhs_lower_lawn_green','on') %}
+  {% set session_vol  = [0, (volume_L - pool_start)]|max %}
+  {% set remaining_pool = [0, (pool_target - session_vol)]|max if pool_target > 0 else 0 %}
+  {% set fill_pct     = [0, [100, (session_vol / pool_target * 100)|round(0)|int]|min]|max if pool_target > 0 else 0 %}
   <style>
   .zwv{padding:12px;font-family:var(--primary-font-family);color:var(--primary-text-color)}
   .zwv-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -104,15 +113,19 @@ content: >-
   .zwv-pool-hdr{font-size:.78em;font-weight:700;color:#64b5f6;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
   .zwv-pool-row{display:flex;justify-content:space-between;align-items:center;font-size:.82em;margin-bottom:6px;color:var(--secondary-text-color)}
   .zwv-pool-val{font-weight:600;color:var(--primary-text-color)}
-  .zwv-pool-note{font-size:.72em;color:#555;margin-top:8px;font-style:italic}
+  .zwv-pool-clickable{cursor:pointer}
+  .zwv-pool-clickable:hover .zwv-pool-val{color:#4fc3f7}
+  .zwv-pool-progress{height:8px;background:rgba(79,195,247,.1);border-radius:4px;margin:4px 0 10px;overflow:hidden}
+  .zwv-pool-bar{height:100%;background:linear-gradient(90deg,#4fc3f7,#0288d1);border-radius:4px;transition:width .5s}
   </style>
   <div class="zwv">
     <div class="zwv-hdr">
       <span class="zwv-ttl">💧 {{ name }}</span>
       <div class="zwv-hdr-r">
-        <span id="zwv-poolbtn-tap_lhs_lower_lawn_green" class="zwv-poolbtn"
-          title="Enable pool mode"
-          onclick="zwvTogglePool_tap_lhs_lower_lawn_green()">🏊</span>
+        <span id="zwv-poolbtn-tap_lhs_lower_lawn_green"
+          class="zwv-poolbtn {{ 'zwv-poolbtn-on' if pool_active else '' }}"
+          title="{{ 'Pool mode active — click to hide' if pool_active else 'Enable pool mode' }}"
+          onclick="(function(){var h=document.querySelector('home-assistant');if(!h||!h.hass)return;h.hass.callService('input_boolean','toggle',{entity_id:'input_boolean.pool_fill_active_lhs_lower_lawn_green'});if(!{{ 'true' if pool_active else 'false' }})h.hass.callService('input_number','set_value',{entity_id:'input_number.pool_fill_start_volume',value:{{ volume_L }}});})()">🏊</span>
         <span class="zwv-warn {{ 'zwv-won' if unavailable else 'zwv-woff' }}"
           title="{{ 'Device unavailable' if unavailable else 'No warnings' }}"
           onclick="this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:'switch.tap_lhs_lower_lawn_green'}}))">&#9888;</span>
@@ -173,27 +186,35 @@ content: >-
         </div>
       </div>
     </div>
-    <div id="zwv-pool-tap_lhs_lower_lawn_green" class="zwv-pool" style="display:none">
+    <div id="zwv-pool-tap_lhs_lower_lawn_green" class="zwv-pool" {{ 'style="display:none"' if not pool_active else '' }}>
       <div class="zwv-pool-hdr">🏊 Pool fill mode</div>
+      <div class="zwv-pool-row zwv-pool-clickable"
+        onclick="this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:'input_number.pool_fill_target'}}))">
+        <span>Target</span>
+        <span class="zwv-pool-val">{{ pool_target|int if pool_target > 0 else 'tap to set ✏' }}{{ ' L' if pool_target > 0 else '' }}</span>
+      </div>
+      {% if pool_target > 0 %}
+      <div class="zwv-pool-progress">
+        <div class="zwv-pool-bar" style="width:{{ fill_pct }}%"></div>
+      </div>
+      {% endif %}
+      <div class="zwv-pool-row">
+        <span>Filled this session</span>
+        <span class="zwv-pool-val">{{ session_vol|round(1) }} L</span>
+      </div>
+      <div class="zwv-pool-row">
+        <span>Remaining</span>
+        <span class="zwv-pool-val">{{ (remaining_pool|round(1)|string + ' L') if pool_target > 0 else '—' }}</span>
+      </div>
       <div class="zwv-pool-row">
         <span>Valve open for</span>
         <span class="zwv-pool-val" id="zwv-elapsed-tap_lhs_lower_lawn_green">{{ elapsed_fmt if valve_open else '—' }}</span>
       </div>
-      <div class="zwv-pool-row">
-        <span>Today's usage</span>
-        <span class="zwv-pool-val">{{ daily_disp }}</span>
-      </div>
-      <div class="zwv-pool-row">
-        <span>Volume limit</span>
-        <span class="zwv-pool-val">— (v1.0.0)</span>
-      </div>
-      <div class="zwv-pool-note">Volume-based safety cutoff available in v1.0.0</div>
     </div>
   </div>
   <script>
   (function(){
     var prefix='tap_lhs_lower_lawn_green';
-    var poolKey='zwv_pool_'+prefix;
     var lastChangedTs={{ last_changed_ts }};
     var valveOpen={{ 'true' if valve_open else 'false' }};
     var finishTs={{ finish_ts }};
@@ -208,21 +229,6 @@ content: >-
       var el=document.getElementById('zwv-elapsed-'+prefix);
       if(el)el.textContent=elapsed();
     }
-    function applyPool(){
-      var active=localStorage.getItem(poolKey)==='true';
-      var section=document.getElementById('zwv-pool-'+prefix);
-      var btn=document.getElementById('zwv-poolbtn-'+prefix);
-      if(section)section.style.display=active?'block':'none';
-      if(btn){
-        btn.title=active?'Pool mode active — click to hide':'Enable pool mode';
-        btn.classList.toggle('zwv-poolbtn-on',active);
-      }
-      if(active)updateElapsed();
-    }
-    window['zwvTogglePool_'+prefix]=function(){
-      localStorage.setItem(poolKey,localStorage.getItem(poolKey)!=='true');
-      applyPool();
-    };
     function getRemaining(){
       if(!timerActive)return null;
       var s=Math.max(0,Math.floor(finishTs-Date.now()/1000));
@@ -234,7 +240,6 @@ content: >-
       var r=getRemaining();
       if(cd&&r!==null)cd.textContent=r;
     }
-    applyPool();
     setInterval(updateElapsed,30000);
     if(timerActive)setInterval(updateCountdown,1000);
   })();
