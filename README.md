@@ -63,6 +63,49 @@ Claude will create all required helpers, the automation, and deploy the card.
 
 ---
 
+## Pool fill mode
+
+Pool fill mode turns the card into a volume-controlled fill controller — ideal for topping up a swimming pool or large tank overnight without manual monitoring.
+
+### How to use
+
+1. Tap **🏊** in the card header — the pool fill section expands
+2. Tap the **Target** row and enter your target volume in litres (e.g. 8 500 L)
+3. Open the valve with **OPEN** or a timer preset
+4. The card shows:
+   - **Target** — your set volume (tap to edit)
+   - **Progress bar** — cyan fill showing % complete
+   - **Filled this session** — litres pumped since pool mode was activated
+   - **Remaining** — litres still needed
+   - **Valve open for** — elapsed time since valve opened
+5. When the target is reached, an HA automation closes the valve automatically
+6. Tap 🏊 again to dismiss the pool section
+
+### Overnight fill behaviour (auto-reopen)
+
+For long fills (8–10 hours), three automations work together:
+
+| Automation | Purpose |
+|-----------|---------|
+| **Pool fill cutoff** | Closes valve when target volume is reached |
+| **Pool fill auto-reopen** | Reopens valve if closed unexpectedly before target is reached (firmware glitch, Zigbee dropout, HA restart) — checks after a 30-second delay |
+| **Close valve on timer** | Closes valve when a countdown timer preset expires |
+
+The auto-reopen automation distinguishes a legitimate cutoff (target reached → `session >= target` still true after 30 s → valve stays closed) from an unexpected close (`session < target` → valve reopens).
+
+### How to stop a fill safely
+
+1. Tap **🏊** to deactivate pool mode
+2. Close the valve with **CLOSE** (optional — pool mode off is enough)
+
+> Closing the valve while pool mode is still active will trigger the auto-reopen after 30 seconds. Always disable pool mode first.
+
+### Session tracking
+
+Session volume is computed as `filled = current_accumulator − start_accumulator`. The start accumulator is recorded automatically when you activate pool mode. Deactivating and reactivating pool mode (tapping 🏊 twice) starts a new session from zero.
+
+---
+
 ## Entities used
 
 | Entity | Role |
