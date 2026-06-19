@@ -29,6 +29,7 @@ A styled Home Assistant Lovelace dashboard card for **Zigbee smart water valves*
 | v0.2.0 | ✅ | Daily & monthly water consumption (Riemann sum + utility meter helpers) |
 | v0.3.0 | ✅ | Countdown timer with auto-close valve automation |
 | v1.0.0 | ✅ | Pool fill mode — volume-based safety cutoff |
+| v1.0.1 | ✅ | Pool fill auto-reopen — valve restarts automatically if closed unexpectedly mid-fill |
 
 ---
 

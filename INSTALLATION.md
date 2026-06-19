@@ -243,6 +243,46 @@ mode: single
 
 ---
 
+#### Step 2c — Create the pool fill auto-reopen automation
+
+This automation reopens the valve automatically if the firmware, a Zigbee dropout, or an HA restart closes it unexpectedly during an active pool fill — essential for long overnight fills.
+
+> **To stop a fill intentionally:** tap 🏊 to deactivate pool mode first, *then* close the valve. The automation checks pool mode state and will not reopen the valve when pool mode is off.
+
+Paste this YAML into the automation editor (three-dot menu → Edit as YAML):
+
+```yaml
+alias: Pool fill auto-reopen (LHS Lower Lawn Green)
+description: Reopens valve if closed unexpectedly during active pool fill before target is reached
+trigger:
+  - platform: state
+    entity_id: switch.tap_lhs_lower_lawn_green
+    from: 'on'
+    to: 'off'
+  - platform: homeassistant
+    event: start
+condition:
+  - condition: state
+    entity_id: input_boolean.pool_fill_active_lhs_lower_lawn_green
+    state: 'on'
+action:
+  - delay: "00:00:30"
+  - condition: template
+    value_template: >
+      {% set session = [0, states('sensor.tap_lhs_lower_lawn_green_volume')|float(0) -
+                       states('input_number.pool_fill_start_volume')|float(0)]|max %}
+      {% set target = states('input_number.pool_fill_target')|float(0) %}
+      {{ target > 0 and session < target }}
+  - action: switch.turn_on
+    target:
+      entity_id: switch.tap_lhs_lower_lawn_green
+mode: restart
+```
+
+The 30-second delay lets the integration sensor settle. If the target was legitimately reached (cutoff automation fired), `session >= target` will still be true after 30 s and the reopen is skipped. If the close was unexpected, `session < target` and the valve reopens.
+
+---
+
 #### Step 3 — Download and adapt the card YAML
 
 1. Download [`releases/v1.0.0/card.yaml`](releases/v1.0.0/card.yaml) from this repository
@@ -291,7 +331,7 @@ The card should show:
 
 ## Adding more valves
 
-Repeat Steps 1–4 for each additional valve, substituting that valve's entity prefix throughout. Each valve needs its own set of 5 sensor/timer helpers (steps 1a–1e), its own `input_boolean.pool_fill_active_{prefix}` (step 1h), its own two automations (steps 2 and 2b), and its own card instance. The two `input_number` pool fill helpers (steps 1f–1g) are shared — create them once only.
+Repeat Steps 1–4 for each additional valve, substituting that valve's entity prefix throughout. Each valve needs its own set of 5 sensor/timer helpers (steps 1a–1e), its own `input_boolean.pool_fill_active_{prefix}` (step 1h), its own three automations (steps 2, 2b, and 2c), and its own card instance. The two `input_number` pool fill helpers (steps 1f–1g) are shared — create them once only.
 
 ---
 

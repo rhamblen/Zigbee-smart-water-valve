@@ -12,6 +12,19 @@ Nothing planned yet.
 
 ---
 
+## [1.0.1] — 2026-06-18
+
+### Added
+- **Pool fill auto-reopen automation** — if the valve closes unexpectedly during an active pool fill (firmware glitch, Zigbee dropout, HA restart), a new automation reopens it automatically after a 30-second delay. Essential for long overnight fills of 8–10 hours where manual monitoring is not practical.
+
+### Design decisions
+- 30-second delay before the reopen check gives the integration sensor time to reflect the final volume. If the cutoff automation legitimately closed the valve (target reached), `session >= target` is still true after 30 s and the reopen is skipped.
+- `homeassistant.start` trigger handles the HA-restart case where the valve may be found closed on boot with pool mode still active.
+- `mode: restart` means repeated unexpected closes (e.g. repeated Zigbee dropouts) each restart the 30-second wait cleanly.
+- **Safe stop:** to intentionally stop a pool fill, disable pool mode (tap 🏊) before closing the valve. The automation checks `input_boolean.pool_fill_active_{prefix}` and will not reopen when pool mode is off.
+
+---
+
 ## [1.0.0] — 2026-06-18
 
 ### Added
