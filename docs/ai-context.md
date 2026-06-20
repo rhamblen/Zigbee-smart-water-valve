@@ -108,6 +108,23 @@ All classes prefixed `.zwv-`:
 | 3 | v0.3.0 | Countdown timer | `timer` helper per valve + 1 automation |
 | — | v1.0.0 | Pool fill mode, full docs | `input_number` + automation for volume cutoff |
 
+## Scheduler integration contract (v1.1.0)
+
+External schedulers offload a timed valve run to this card via a stable contract
+(documented from v1.1.0; the objects exist since v0.3.0):
+
+- **`timer.{prefix}_timer`** (`restore: true`) — the per-valve countdown timer.
+- **`automation.close_tap_when_timer_finishes_{prefix}`** — triggers on `timer.finished`
+  for that timer and calls `switch.turn_off` on `switch.{prefix}`.
+
+Naming convention IS the interface: `switch.{prefix}` ⇒ `timer.{prefix}_timer`. A
+scheduler opens the switch, `timer.start`s the timer with a duration, and waits for the
+valve to report `off` (closed by the finished automation, or earlier by the pool-fill
+volume cutoff). The consumer is
+[garden-watering-scheduler-mk2](https://github.com/rhamblen/garden-watering-scheduler-mk2)
+(`docs/integration-contract.md` there). Do not rename the timer or remove the finished
+automation without a coordinated scheduler update — treat them as a public API.
+
 ## How to publish a new version
 
 1. Create `releases/vX.Y.Z/` folder with `card.yaml` and `RELEASE_NOTES.md`

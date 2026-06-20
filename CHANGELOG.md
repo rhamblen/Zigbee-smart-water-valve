@@ -12,6 +12,16 @@ Nothing planned yet.
 
 ---
 
+## [1.1.0] — 2026-06-20
+
+### Documentation
+- **Scheduler integration contract** documented in README and `docs/ai-context.md`: the per-valve `timer.{prefix}_timer` helper and the `automation.close_tap_when_timer_finishes_{prefix}` (`timer.finished` → `switch.turn_off`) — both present since v0.3.0 — are now declared as a stable public interface that external schedulers use to offload a timed valve run to this card. The companion [Garden Watering Scheduler mk2](https://github.com/rhamblen/garden-watering-scheduler-mk2) consumes this contract.
+
+### No functional change
+- The card YAML is unchanged from v1.0.1. This is a docs-only release; the timer + finished automation behaviour is exactly as shipped in v0.3.0.
+
+---
+
 ## [1.0.1] — 2026-06-18
 
 ### Added

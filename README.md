@@ -30,6 +30,7 @@ A styled Home Assistant Lovelace dashboard card for **Zigbee smart water valves*
 | v0.3.0 | ✅ | Countdown timer with auto-close valve automation |
 | v1.0.0 | ✅ | Pool fill mode — volume-based safety cutoff |
 | v1.0.1 | ✅ | Pool fill auto-reopen — valve restarts automatically if closed unexpectedly mid-fill |
+| v1.1.0 | ✅ | Documented scheduler integration contract (timer + finished automation) — docs only, no card change |
 
 ---
 
@@ -131,6 +132,35 @@ Session volume is computed as `filled = current_accumulator − start_accumulato
 | Dial glow | — | Pulsing cyan (flowing) |
 | Warning light | Dim `#444` | Amber glow (unavailable) |
 | Timer countdown | — | Cyan `#4fc3f7` |
+
+---
+
+## Scheduler integration contract
+
+This card exposes a small, stable contract that external schedulers — e.g.
+[Garden Watering Scheduler mk2](https://github.com/rhamblen/garden-watering-scheduler-mk2)
+— use to **offload** a timed valve run to this card's own countdown timer instead of
+managing the close themselves.
+
+| Contract | Entity / behaviour |
+|----------|-------------------|
+| Per-valve countdown timer | `timer.{prefix}_timer` (`restore: true`) |
+| Auto-close on finish | `automation.close_tap_when_timer_finishes_{prefix}` — triggers on `timer.finished` for that timer, calls `switch.turn_off` on `switch.{prefix}` |
+
+A scheduler opens `switch.{prefix}`, calls `timer.start` on `timer.{prefix}_timer` with
+the desired duration, then waits for the valve to report `off`. This card's
+`timer.finished` automation performs the close — and the **volume safety cutoff** (pool
+fill mode) will close the valve too if a litre target is hit first, so the scheduler
+inherits that protection for free.
+
+**The naming convention is the interface:** `switch.{prefix}` ⇒ `timer.{prefix}_timer`.
+Renaming the timer or removing the finished automation will break schedulers that
+depend on it — treat them as a public API. These objects have existed since **v0.3.0**;
+**v1.1.0** only documents them as a contract (no functional change to the card).
+
+> Schedulers that need plain on/off valves with no timer should use
+> [Garden Watering Scheduler mk1](https://github.com/rhamblen/garden-watering-scheduler),
+> which self-manages the watering delay.
 
 ---
 
