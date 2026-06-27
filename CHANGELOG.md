@@ -12,6 +12,13 @@ Nothing planned yet.
 
 ---
 
+## [1.1.1] — 2026-06-27
+
+### Fixed
+- **Water meter fault indicator false-positive** — the ⚠ symbol on the water meter tile was glowing yellow even when there were no faults. Root cause: the `has_faults` guard did not include `no_alarm` (the device's "no fault" state value) in its exclusion list. It now correctly treats `no_alarm` as a non-fault state, so the icon is grey when healthy and amber only on a real alarm.
+
+---
+
 ## [1.1.0] — 2026-06-20
 
 ### Documentation

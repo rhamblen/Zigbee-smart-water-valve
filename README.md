@@ -31,6 +31,7 @@ A styled Home Assistant Lovelace dashboard card for **Zigbee smart water valves*
 | v1.0.0 | ✅ | Pool fill mode — volume-based safety cutoff |
 | v1.0.1 | ✅ | Pool fill auto-reopen — valve restarts automatically if closed unexpectedly mid-fill |
 | v1.1.0 | ✅ | Documented scheduler integration contract (timer + finished automation) — docs only, no card change |
+| v1.1.1 | ✅ | Fix water meter fault indicator false-positive (no_alarm state now correctly shown as grey) |
 
 ---
 
